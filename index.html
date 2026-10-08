@@ -2366,3 +2366,320 @@
 		</tr>
 	</table>
 </div>
+<style>
+#attendancePanel{
+  padding:15px;
+  margin:10px 0;
+  background:#f5f5f5;
+  border:1px solid #ccc;
+  border-radius:8px;
+}
+#studentSearch{
+  width:300px;
+  padding:10px;
+  font-size:16px;
+}
+.attBtn{
+  padding:6px 10px;
+  margin:2px;
+  border:0;
+  border-radius:5px;
+  cursor:pointer;
+}
+.presentBtn{background:#198754;color:white;}
+.absentBtn{background:#dc3545;color:white;}
+.callBtn{background:#0d6efd;color:white;}
+.waBtn{background:#25d366;color:white;}
+.smsBtn{background:#6f42c1;color:white;}
+.att-status{
+  font-weight:bold;
+}
+</style>
+
+<div id="attendancePanel">
+  <h2>📋 School Attendance System</h2>
+
+  <input
+    type="text"
+    id="studentSearch"
+    placeholder="SR No. / Scholar No. / Student Name खोजें"
+  >
+
+  <button onclick="showAllStudents()">सभी विद्यार्थी</button>
+
+  <p>
+    🟢 Present:
+    <b id="presentCount">0</b>
+    &nbsp;&nbsp;
+    🔴 Absent:
+    <b id="absentCount">0</b>
+  </p>
+</div>
+
+<script>
+(function(){
+
+  const table = document.getElementById("gridSearch");
+
+  if(!table){
+    alert("Student table नहीं मिली।");
+    return;
+  }
+
+  const rows = table.querySelectorAll("tr");
+
+  /* Header में Attendance और Guardian Action जोड़ना */
+  const header = rows[0];
+
+  if(header && !header.querySelector(".attendanceHeader")){
+    const th1 = document.createElement("th");
+    th1.textContent = "Attendance";
+    th1.className = "attendanceHeader";
+
+    const th2 = document.createElement("th");
+    th2.textContent = "Guardian";
+    
+    header.appendChild(th1);
+    header.appendChild(th2);
+  }
+
+  /* हर विद्यार्थी की row में buttons */
+  rows.forEach(function(row,index){
+
+    if(index === 0) return;
+
+    const cells = row.querySelectorAll("td");
+
+    if(cells.length < 7) return;
+
+    const srNo = cells[0].innerText.trim();
+    const scholarNo = cells[1].innerText.trim();
+    const studentName = cells[2].innerText.trim();
+    const fatherName = cells[3].innerText.trim();
+    const className = cells[5].innerText.trim();
+    const mobile = cells[6].innerText.trim();
+
+    row.dataset.search =
+      srNo + " " +
+      scholarNo + " " +
+      studentName + " " +
+      fatherName + " " +
+      mobile;
+
+    /* Attendance cell */
+    const attCell = document.createElement("td");
+
+    const presentBtn = document.createElement("button");
+    presentBtn.innerText = "Present";
+    presentBtn.className = "attBtn presentBtn";
+
+    const absentBtn = document.createElement("button");
+    absentBtn.innerText = "Absent";
+    absentBtn.className = "attBtn absentBtn";
+
+    const status = document.createElement("div");
+    status.className = "att-status";
+    status.style.marginTop = "5px";
+
+    presentBtn.onclick = function(){
+      setAttendance(srNo,"Present",status,row);
+    };
+
+    absentBtn.onclick = function(){
+      setAttendance(srNo,"Absent",status,row);
+    };
+
+    attCell.appendChild(presentBtn);
+    attCell.appendChild(absentBtn);
+    attCell.appendChild(status);
+
+    row.appendChild(attCell);
+
+    /* Guardian buttons */
+    const guardianCell = document.createElement("td");
+
+    const callBtn = document.createElement("button");
+    callBtn.innerText = "📞 Call";
+    callBtn.className = "attBtn callBtn";
+
+    const waBtn = document.createElement("button");
+    waBtn.innerText = "💬 WhatsApp";
+    waBtn.className = "attBtn waBtn";
+
+    const smsBtn = document.createElement("button");
+    smsBtn.innerText = "✉ SMS";
+    smsBtn.className = "attBtn smsBtn";
+
+    callBtn.onclick = function(){
+      if(mobile){
+        window.location.href = "tel:" + cleanMobile(mobile);
+      }else{
+        alert("इस विद्यार्थी का Mobile No. उपलब्ध नहीं है।");
+      }
+    };
+
+    waBtn.onclick = function(){
+      if(!mobile){
+        alert("इस विद्यार्थी का Mobile No. उपलब्ध नहीं है।");
+        return;
+      }
+
+      const phone = cleanMobile(mobile);
+
+      const message =
+        "नमस्कार " + fatherName + " जी। " +
+        "आपका बच्चा " + studentName +
+        ", कक्षा " + className +
+        ", आज विद्यालय में अनुपस्थित है। " +
+        "कृपया विद्यालय से संपर्क करें।";
+
+      window.open(
+        "https://wa.me/" + phone +
+        "?text=" + encodeURIComponent(message),
+        "_blank"
+      );
+    };
+
+    smsBtn.onclick = function(){
+      if(!mobile){
+        alert("इस विद्यार्थी का Mobile No. उपलब्ध नहीं है।");
+        return;
+      }
+
+      const message =
+        "नमस्कार " + fatherName + " जी। " +
+        "आपका बच्चा " + studentName +
+        ", कक्षा " + className +
+        ", आज विद्यालय में अनुपस्थित है। कृपया विद्यालय से संपर्क करें।";
+
+      window.location.href =
+        "sms:" + cleanMobile(mobile) +
+        "?body=" + encodeURIComponent(message);
+    };
+
+    guardianCell.appendChild(callBtn);
+    guardianCell.appendChild(waBtn);
+    guardianCell.appendChild(smsBtn);
+
+    row.appendChild(guardianCell);
+
+    /* पहले से saved attendance */
+    const saved = localStorage.getItem("attendance_" + srNo);
+
+    if(saved){
+      status.innerText = saved;
+      status.style.color =
+        saved === "Present" ? "green" : "red";
+    }
+
+  });
+
+  /* Search */
+  document.getElementById("studentSearch")
+    .addEventListener("input", function(){
+
+      const search = this.value.toLowerCase().trim();
+
+      rows.forEach(function(row,index){
+
+        if(index === 0) return;
+
+        const data = row.dataset.search || "";
+
+        row.style.display =
+          data.toLowerCase().includes(search)
+          ? ""
+          : "none";
+      });
+
+    });
+
+  updateCount();
+
+
+  function setAttendance(srNo,status,statusElement,row){
+
+    localStorage.setItem(
+      "attendance_" + srNo,
+      status
+    );
+
+    statusElement.innerText =
+      status === "Present"
+      ? "🟢 Present"
+      : "🔴 Absent";
+
+    statusElement.style.color =
+      status === "Present"
+      ? "green"
+      : "red";
+
+    updateCount();
+
+    /* Absent होने पर Guardian options */
+    if(status === "Absent"){
+      row.style.backgroundColor = "#ffe6e6";
+    }else{
+      row.style.backgroundColor = "";
+    }
+  }
+
+
+  function cleanMobile(number){
+
+    let phone =
+      String(number)
+      .replace(/\D/g,"");
+
+    if(phone.length === 10){
+      phone = "91" + phone;
+    }
+
+    return phone;
+  }
+
+
+  function updateCount(){
+
+    let present = 0;
+    let absent = 0;
+
+    rows.forEach(function(row,index){
+
+      if(index === 0) return;
+
+      const srNo =
+        row.querySelector("td")
+        ?.innerText.trim();
+
+      if(!srNo) return;
+
+      const saved =
+        localStorage.getItem(
+          "attendance_" + srNo
+        );
+
+      if(saved === "Present") present++;
+      if(saved === "Absent") absent++;
+    });
+
+    document.getElementById("presentCount").innerText =
+      present;
+
+    document.getElementById("absentCount").innerText =
+      absent;
+  }
+
+
+  window.showAllStudents = function(){
+
+    document.getElementById("studentSearch").value = "";
+
+    rows.forEach(function(row){
+      row.style.display = "";
+    });
+
+  };
+
+})();
+</script>

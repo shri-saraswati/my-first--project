@@ -2402,7 +2402,7 @@
   <input
     type="text"
     id="studentSearch"
-    placeholder="SR No. / Scholar No. / Student Name खोजें"
+    placeholder="SR No. / Scholar No. / Student Name खोजें"oninput="searchStudent()"
   >
 
   <button onclick="showAllStudents()">सभी विद्यार्थी</button>
@@ -2682,4 +2682,20 @@
   };
 
 })();
+
+function searchStudent() {
+  const input = document.getElementById("studentSearch");
+  const filter = input.value.trim().toLowerCase();
+  const rows = document.querySelectorAll("#grdSearch tr");
+
+  rows.forEach((row, index) => {
+    if (index === 0) {
+      row.style.display = "";
+      return;
+    }
+
+    row.style.display =
+      row.innerText.toLowerCase().includes(filter) ? "" : "none";
+  });
+}
 </script>

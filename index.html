@@ -1,4 +1,19 @@
 
+<div style="margin:10px 0;">
+  <label for="studentSearch">विद्यार्थी खोजें (SR No. या नाम):</label>
+  <input type="text" id="studentSearch" placeholder="SR No. या विद्यार्थी का नाम लिखें..." onkeyup="searchStudent()" style="width:300px;padding:8px;margin:8px 0;">
+</div>
+<script>
+function searchStudent() {
+  var input = document.getElementById("studentSearch").value.toLowerCase();
+  var table = document.getElementById("grdSearch");
+  var rows = table.getElementsByTagName("tr");
+  for (var i = 1; i < rows.length; i++) {
+    var text = rows[i].innerText.toLowerCase();
+    rows[i].style.display = text.includes(input) ? "" : "none";
+  }
+}
+</script>
 <style> td { mso-number-format:\@; } </style><div>
 	<table cellspacing="0" rules="all" class="table table-bordered" border="1" id="grdSearch" style="width:100%;border-collapse:collapse;">
 		<tr style="background-color:White;">
